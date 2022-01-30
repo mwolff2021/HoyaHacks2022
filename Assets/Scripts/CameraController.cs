@@ -32,7 +32,7 @@ using UnityEngine.XR.ARFoundation;
 /// </summary>
 public class CameraController : MonoBehaviour
 {
-    [SerializeField]
+    /*[SerializeField]
     Text m_ImageInfo;
 
     /// <summary>
@@ -42,16 +42,94 @@ public class CameraController : MonoBehaviour
     {
         get { return m_ImageInfo; }
         set { m_ImageInfo = value; }
-    }
+    }*/
 
     Texture2D m_Texture;
     ARSessionOrigin arOrigin;
+
+    [SerializeField]
+    public TextAsset labels = null;
+
+    [SerializeField]
+    public GameObject indicator = null;
+
+    [SerializeField]
+    public TextAsset model = null;
+
+    //Classifier classifier;
+    public Detector detector;// = new Detector(model, labels, DetectionModels.YOLO);;
+
+    private IList outputs;
+    private GameObject apple;
+
+    public void InitTF()
+    {
+        // MobileNet
+        //classifier = new Classifier(model, labels, output: "MobilenetV1/Predictions/Reshape_1");
+
+        // SSD MobileNet
+        //detector = new Detector(model, labels, 
+        // input: "image_tensor");
+
+        // Tiny YOLOv2
+        detector = new Detector(model, labels, DetectionModels.YOLO);
+        //width: 416,
+        //height: 416,
+        //mean: 0,
+        //std: 255);
+    }
+
+    public void InitIndicator()
+    {
+        apple = Instantiate(indicator, new Vector3(0, 0, 0), Quaternion.identity);
+        apple.transform.localScale = new Vector3(0.0004f, 0.0004f, 0.0004f);
+        apple.SetActive(false);
+    }
+
+    public void RunTF(Texture2D texture)
+    {
+        // MobileNet
+        //outputs = classifier.Classify(texture, angle: 90, threshold: 0.05f);
+
+        // SSD MobileNet
+        //outputs = detector.Detect(m_Texture, angle: 90, threshold: 0.6f);
+
+        // Tiny YOLOv2
+        outputs = detector.Detect(m_Texture, angle: 90, threshold: 0.1f);
+
+        // Draw AR apple
+        for (int i = 0; i < outputs.Count; i++)
+        {
+            var output = outputs[i] as Dictionary<string, object>;
+            if (output["detectedClass"].Equals("apple"))
+            {
+                DrawApple(output["rect"] as Dictionary<string, float>);
+                break;
+            }
+        }
+    }
+
+    public void CloseTF()
+    {
+        //classifier.Close();
+        try
+        {
+            detector.Close();
+        }
+        catch
+        {
+            Debug.Log("no detector");
+        }
+    }
+
 
     void OnEnable()
     {
         ARSubsystemManager.cameraFrameReceived += OnCameraFrameReceived;
 
         arOrigin = FindObjectOfType<ARSessionOrigin>();
+
+        var textFile = Resources.Load<TextAsset>("Text/textFile01");
 
         InitTF();
         InitIndicator();
@@ -64,6 +142,8 @@ public class CameraController : MonoBehaviour
         CloseTF();
     }
 
+
+
     unsafe void OnCameraFrameReceived(ARCameraFrameEventArgs eventArgs)
     {
         // Attempt to get the latest camera image. If this method succeeds,
@@ -73,9 +153,9 @@ public class CameraController : MonoBehaviour
             return;
 
         // Display some information about the camera image
-        m_ImageInfo.text = string.Format(
+        /*m_ImageInfo.text = string.Format(
             "Image info:\n\twidth: {0}\n\theight: {1}\n\tplaneCount: {2}\n\ttimestamp: {3}\n\tformat: {4}",
-            image.width, image.height, image.planeCount, image.timestamp, image.format);
+            image.width, image.height, image.planeCount, image.timestamp, image.format);*/
 
         // Choose an RGBA format.
         // See CameraImage.FormatSupported for a complete list of supported formats.
@@ -109,74 +189,7 @@ public class CameraController : MonoBehaviour
         RunTF(m_Texture);
     }
 
-    [SerializeField]
-    TextAsset model;
-
-    [SerializeField]
-    TextAsset labels;
-
-    [SerializeField]
-    GameObject indicator;
-
-    Classifier classifier;
-    Detector detector;
-
-    private IList outputs;
-    private GameObject apple;
-
-    public void InitTF()
-    {
-        // MobileNet
-        //classifier = new Classifier(model, labels, output: "MobilenetV1/Predictions/Reshape_1");
-
-        // SSD MobileNet
-        detector = new Detector(model, labels, 
-                                input: "image_tensor");
-
-        // Tiny YOLOv2
-        //detector = new Detector(model, labels, DetectionModels.YOLO,
-                                //width: 416,
-                                //height: 416,
-                                //mean: 0,
-                                //std: 255);
-    }
-
-    public void InitIndicator()
-    {
-        apple = Instantiate(indicator, new Vector3(0, 0, 0), Quaternion.identity);
-        apple.transform.localScale = new Vector3(0.0004f, 0.0004f, 0.0004f);
-        apple.SetActive(false);
-    }
-
-    public void RunTF(Texture2D texture)
-    {
-        // MobileNet
-        //outputs = classifier.Classify(texture, angle: 90, threshold: 0.05f);
-
-        // SSD MobileNet
-        outputs = detector.Detect(m_Texture, angle: 90, threshold: 0.6f);
-
-        // Tiny YOLOv2
-        //outputs = detector.Detect(m_Texture, angle: 90, threshold: 0.1f);
-
-        // Draw AR apple
-        for (int i = 0; i < outputs.Count; i++)
-        {
-            var output = outputs[i] as Dictionary<string, object>;
-            if (output["detectedClass"].Equals("apple"))
-            {
-                DrawApple(output["rect"] as Dictionary<string, float>);
-                break;
-            }
-        }
-    }
-
-    public void CloseTF()
-    {
-        classifier.Close();
-        detector.Close();
-    }
-
+    
     public void OnGUI()
     {
         if (outputs != null)

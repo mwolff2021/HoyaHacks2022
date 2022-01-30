@@ -248,7 +248,7 @@ PlayerSettings:
   AndroidBuildApkPerCpuArchitecture: 0
   AndroidTVCompatibility: 1
   AndroidIsGame: 1
-  AndroidEnableTango: 0
+  AndroidEnableTango: 1
   androidEnableBanner: 1
   androidUseLowAccuracyLocation: 0
   m_AndroidBanners:
@@ -528,7 +528,9 @@ PlayerSettings:
   webGLLinkerTarget: 1
   webGLThreadsSupport: 0
   scriptingDefineSymbols:
-    4: UNITY_POST_PROCESSING_STACK_V2
+    1: ENABLE_TENSORFLOW
+    4: UNITY_POST_PROCESSING_STACK_V2;ENABLE_TENSORFLOW
+    7: ENABLE_TENSORFLOW
   platformArchitecture:
     iOS: 1
   scriptingBackend: {}
